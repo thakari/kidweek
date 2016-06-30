@@ -2,7 +2,7 @@ var express = require('express');
 var app = express();
 
 var pgp = require("pg-promise")(/*options*/);
-var db = pgp("postgres://emononen:kanta321@localhost:5432/kw");
+var db = pgp("postgres://kidweek:123@localhost:5432/kw");
 var user = {};
 db.one("SELECT * from patterns limit 1")
     .then(function (data) {
