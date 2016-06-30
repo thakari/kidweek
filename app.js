@@ -3,23 +3,12 @@ var app = express();
 
 var pgp = require("pg-promise")(/*options*/);
 var db = pgp("postgres://kidweek:123@localhost:5432/kw");
-var user = {};
-db.one("SELECT * from patterns limit 1")
-    .then(function (data) {
-        console.log("DATA:", data.id);
-        user = data;
-    })
-    .catch(function (error) {
-        console.log("ERROR:", error);
-    });
-
-
 
 app.set('port', (process.env.PORT || 5000));
 
 app.get('/', function (req, res) {
     
-    res.send(user);
+    res.send("Tervetuloa Kidweekiin");
 });
 
 app.get('/api/status/:date', function (req, res) {
