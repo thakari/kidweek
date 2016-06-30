@@ -22,7 +22,9 @@ app.get('/', function (req, res) {
     res.send(user);
 });
 
-app.get('/api/status/', function (req, res) {
+app.get('/api/status/:date', function (req, res) {
+    console.log("Date in req is" + req.params.date);
+    var queryDate = new Date(req.params.date);
     db.one("select start_at, array_to_json(statuses) as stats from patterns where user_id=$1", 'qwe321')
         .then(function(data) {
             console.log("Got here " + data.start_at);
@@ -31,7 +33,7 @@ app.get('/api/status/', function (req, res) {
             var today = new Date();
             var currentDate = data.start_at;
             var finalStatus = 'none';
-            while (currentDate <= today) {
+            while (currentDate <= queryDate) {
                 var a = data.stats.some(function(entry) {
                     finalStatus = entry;
                     console.log('prosessing' + currentDate.getDate() + ', status is ' + entry);
@@ -44,8 +46,12 @@ app.get('/api/status/', function (req, res) {
                 })  
             }
             console.log("Status " + finalStatus);
+            var result = {
+                status: finalStatus,
+                name: "John Doe"
+            }
+            res.send(result);
     })
-    res.send(user);
 });
 
 
