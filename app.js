@@ -8,7 +8,27 @@ app.set('port', (process.env.PORT || 5000));
 
 app.get('/', function (req, res) {
     
-    res.send("Tervetuloa Kidweekiin");
+    res.send("Tervetuloa");
+});
+
+app.get('/api/test/:user/:date', function (req, res) {
+    var queryDate = new Date(req.params.date);
+    db.one("select start_at, array_to_json(statuses) as stats from patterns where user_id=$1 order by start_at desc", req.params.user)
+        .then(function(data) {
+            var patternStartDate = new Date(data.start_at);
+            var position = (queryDate-patternStartDate) % data.stats.length;
+            var queryStatus = data.stats[position];
+            var result = {
+                user_id: req.params.user,
+                first_name: "",
+                last_name: "",
+                status: queryStatus
+            }
+            res.send(result);
+        })
+        .catch(function(error) {
+            res.send("pattern not found");
+        })
 });
 
 app.get('/api/status/:date', function (req, res) {
