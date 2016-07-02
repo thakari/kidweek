@@ -11,9 +11,9 @@ app.get('/', function (req, res) {
     res.send("Tervetuloa");
 });
 
-app.get('/api/test/:user/:date', function (req, res) {
+app.get('/api/status1/:user/:date', function (req, res) {
     var queryDate = new Date(req.params.date);
-    db.one("select start_at, array_to_json(statuses) as stats from patterns where user_id=$1 order by start_at desc", req.params.user)
+    db.one("select start_at, array_to_json(statuses) as stats from patterns where user_id=$1 and start_at<=$2 order by start_at desc", [req.params.user, req.params.date])
         .then(function(data) {
             var patternStartDate = new Date(data.start_at);
             var position = (queryDate-patternStartDate) % data.stats.length;
