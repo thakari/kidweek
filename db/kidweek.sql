@@ -29,10 +29,6 @@ CREATE TABLE exceptions (
     created_on TIMESTAMP NOT NULL
 );
 
-GRANT ALL ON TABLE patterns TO kidweek;
-GRANT ALL ON TABLE exceptions TO kidweek;
-COMMIT;
-
 BEGIN;
 INSERT INTO users (id) VALUES ('abc123');
 INSERT INTO patterns (user_id, start_at, statuses, created_on) VALUES ('abc123', '2016-01-15', '{"arrives", "present", "present", "leaves"}', now());
@@ -50,5 +46,54 @@ INSERT INTO users (id) VALUES ('week_mom');
 INSERT INTO patterns (user_id, start_at, statuses, created_on) VALUES ('week_mom', '2015-01-05', '{"present", "present", "present", "present", "leaves", "away", "arrives"}', now());
 INSERT INTO exceptions (user_id, exception_start_date, exception_end_date, status, created_on) VALUES ('week_mom', '2016-06-01', '2016-06-07', 'present', now());
 
-
 COMMIT;
+
+CREATE OR REPLACE FUNCTION status (user1 VARCHAR(512), date1 DATE) RETURNS kid_status AS $$
+  DECLARE 
+    position INTEGER := 0;
+    start_at1 DATE;
+    statuses1 kid_status[];
+    status1 kid_status;
+    exception_status kid_status;
+    exception_start_date1 DATE;
+    exception_end_date1 DATE;
+  BEGIN
+    SELECT start_at, statuses INTO start_at1, statuses1 FROM patterns WHERE user_id=user1 AND start_at<=date1 ORDER BY start_at DESC LIMIT 1;
+    IF NOT FOUND THEN
+      RETURN status1;
+    END IF;
+    position := MOD (date1 - start_at1, array_length (statuses1, 1));
+    status1 := statuses1[position+1];
+
+    SELECT exception_start_date, exception_end_date, status INTO exception_start_date1, exception_end_date1, exception_status FROM exceptions WHERE user_id=user1 AND exception_start_date<=date1 AND exception_end_date>=date1 ORDER BY created_on DESC LIMIT 1;
+    IF NOT FOUND THEN
+      RETURN status1;
+    END IF;
+    IF exception_status = 'present' THEN
+      IF exception_start_date1 = date1 AND status1 = 'away' THEN
+        status1 := 'arrives';
+      ELSIF exception_start_date1 = date1 AND status1 = 'leaves' THEN
+        status1 := 'present';
+      ELSIF exception_end_date1 = date1 AND status1 = 'away' THEN
+        status1 := 'leaves';
+      ELSIF exception_end_date1 = date1 AND status1 = 'arrives' THEN
+        status1 := 'present';
+      ELSE 
+        status1 := 'present';
+      END IF;
+    ELSE
+      IF exception_start_date1 = date1 AND status1 = 'present' THEN
+        status1 := 'leaves';
+      ELSIF exception_start_date1 = date1 AND status1 = 'arrives' THEN
+        status1 := 'away';
+      ELSIF exception_end_date1 = date1 AND status1 = 'present' THEN
+        status1 := 'arrives';
+      ELSIF exception_end_date1 = date1 AND status1 = 'leaves' THEN
+        status1 := 'away';
+      ELSE 
+        status1 := 'away';
+      END IF;
+    END IF;
+      RETURN status1;
+  END; $$
+LANGUAGE plpgsql;
