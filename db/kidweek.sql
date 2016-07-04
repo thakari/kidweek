@@ -25,27 +25,26 @@ CREATE TABLE exceptions (
     user_id VARCHAR(512) REFERENCES users ON DELETE CASCADE,
     exception_start_date DATE NOT NULL,
     exception_end_date DATE NOT NULL,
-    status kid_status NOT NULL,
-    created_on TIMESTAMP NOT NULL
+    status kid_status NOT NULL
 );
 
 BEGIN;
 INSERT INTO users (id) VALUES ('abc123');
 INSERT INTO patterns (user_id, start_at, statuses, created_on) VALUES ('abc123', '2016-01-15', '{"arrives", "present", "present", "leaves"}', now());
-INSERT INTO exceptions (user_id, exception_start_date, exception_end_date, status, created_on) VALUES ('abc123', '2015-10-15', '2015-10-22', 'away', now());
+INSERT INTO exceptions (user_id, exception_start_date, exception_end_date, status) VALUES ('abc123', '2015-10-15', '2015-10-22', 'away');
 
 INSERT INTO users (id) VALUES ('qwe321');
 INSERT INTO patterns (user_id, start_at, statuses, created_on) VALUES ('qwe321', '2015-10-11', '{"arrives", "present", "leaves", "away", "away", "arrives", "leaves"}', now());
 
-INSERT INTO exceptions (user_id, exception_start_date, exception_end_date, status, created_on) VALUES ('qwe321', '2015-12-25', '2016-01-05','present', now());
+INSERT INTO exceptions (user_id, exception_start_date, exception_end_date, status) VALUES ('qwe321', '2015-12-25', '2016-01-05','present');
 
 INSERT INTO users (id) VALUES ('weekend_dad');
 INSERT INTO patterns (user_id, start_at, statuses, created_on) VALUES ('weekend_dad', '2015-01-05', '{"away", "away", "away", "away", "away", "away", "away", "away", "away", "away", "away", "arrives", "present", "leaves"}', now());
 
 INSERT INTO users (id) VALUES ('week_mom');
 INSERT INTO patterns (user_id, start_at, statuses, created_on) VALUES ('week_mom', '2015-01-05', '{"present", "present", "present", "present", "leaves", "away", "arrives"}', now());
-INSERT INTO exceptions (user_id, exception_start_date, exception_end_date, status, created_on) VALUES ('week_mom', '2016-06-01', '2016-06-07', 'present', now());
-
+INSERT INTO exceptions (user_id, exception_start_date, exception_end_date, status) VALUES ('week_mom', '2016-06-01', '2016-06-07', 'present');
+INSERT INTO exceptions (user_id, exception_start_date, exception_end_date, status) VALUES ('week_mom', '2016-10-01', '2016-11-01', 'present');
 COMMIT;
 
 CREATE OR REPLACE FUNCTION status (user1 VARCHAR(512), date1 DATE) RETURNS kid_status AS $$
@@ -60,12 +59,12 @@ CREATE OR REPLACE FUNCTION status (user1 VARCHAR(512), date1 DATE) RETURNS kid_s
   BEGIN
     SELECT start_at, statuses INTO start_at1, statuses1 FROM patterns WHERE user_id=user1 AND start_at<=date1 ORDER BY start_at DESC LIMIT 1;
     IF NOT FOUND THEN
-      RETURN status1;
+      RETURN NULL;
     END IF;
     position := MOD (date1 - start_at1, array_length (statuses1, 1));
     status1 := statuses1[position+1];
 
-    SELECT exception_start_date, exception_end_date, status INTO exception_start_date1, exception_end_date1, exception_status FROM exceptions WHERE user_id=user1 AND exception_start_date<=date1 AND exception_end_date>=date1 ORDER BY created_on DESC LIMIT 1;
+    SELECT exception_start_date, exception_end_date, status INTO exception_start_date1, exception_end_date1, exception_status FROM exceptions WHERE user_id=user1 AND exception_start_date<=date1 AND exception_end_date>=date1 ORDER BY id DESC LIMIT 1;
     IF NOT FOUND THEN
       RETURN status1;
     END IF;

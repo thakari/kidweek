@@ -6,36 +6,75 @@ var db = pgp("postgres://kidweek:123@localhost:5432/kw");
 
 app.set('port', (process.env.PORT || 5000));
 
-app.get('/', function (req, res) {
+app.get('/', function(req, res) {
     
     res.send("Tervetuloa");
 });
 
-app.get('/api/status/:fb_token/:date', function (req, res) {
-    var queryStatus = "";
+app.get('/api/status/:fb_token/:date', function(req, res) {
 
     // validoi fb_token
     var user = req.params.fb_token; // ja tän tilalle jotain muuta myöhemmin
     var firstName = "";
     var lastName = "";
 
-    console.log("status1: user: " + user + ", date: " + req.params.date);
-    db.one("select status($1, $2)", [user, req.params.date])
+    console.log("status: user: " + user + ", date: " + req.params.date);
+    db.one("SELECT status($1, $2)", [user, req.params.date])
         .then(function(data) {
-        if (data.status != null) {
-            var result = {
-                user_id: user,
-                first_name: firstName,
-                last_name: lastName,
-                status: data.status
+            if (data.status != null) {
+                var result = {
+                    user_id: user,
+                    first_name: firstName,
+                    last_name: lastName,
+                    status: data.status
+                }
+                res.send(result);
+            } else {
+                res.send("not found...");
             }
-            res.send(result);
-        } else {
-            res.send("not found...");
-        }
-    })
+        })
 });
+
+/*
+app.get('/api/friends_status/:fb_token/:date', function(req, res) {
+    var friends = [];
+    var i;
+    var len;
     
+    // validoi fb_token ja palauta kaverit
+    friends.push ({user_id: "abc123", first_name: "", last_name: ""};
+    friends.push ({user_id: "qwe321", first_name: "", last_name: ""};
+    
+    console.log("friends_status: user: " + user + ", date: " + req.params.date);
+    
+    len = friends.length;
+    for (i=0; i<len; i++) { // tätä pitää muuttaa käymään koko taulukko läpi
+        db.one("SELECT status($1, $2)", [friends[i].user_id, req.params.date])
+            .then(function(data) {
+                friends[i].status = data.status;
+            })
+    })
+    res.send(friends);    
+})
+*/
+
+/*
+app.get('/api/exceptions/:fb_token/:date', function(req, res) {
+
+    // validoi fb_token
+    var user = req.params.fb_token; // ja tän tilalle jotain muuta myöhemmin
+
+    console.log("exceptions: user: " + user + ", date: " + req.params.date);
+    db.one("SELECT exception_start_date, exception_end_date, status FROM exceptions WHERE user_id=$1 AND exception_end_date>=$2 ORDER BY exception_start_date", [user, req.params.date])
+        .then(function(data) {
+            res.send(data.); // tätä pitää muuttaa palauttamaan kaikki rivit taulukkona
+        })
+        .catch(function(err) {
+            res.send("Not found... " + err);
+        })
+})
+*/
+
 /*
 app.get('/api/status/:date', function (req, res) {
     console.log("Date in req is" + req.params.date);
