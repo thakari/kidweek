@@ -6,6 +6,7 @@ DROP TABLE IF EXISTS patterns CASCADE;
 DROP TABLE IF EXISTS exceptions CASCADE;
 
 CREATE TYPE kid_status AS ENUM ('away', 'arrives', 'present', 'leaves');
+CREATE TYPE kid_status2 AS ENUM ('away', 'present');
 
 CREATE TABLE users (
     id VARCHAR(512) PRIMARY KEY
@@ -25,7 +26,7 @@ CREATE TABLE exceptions (
     user_id VARCHAR(512) REFERENCES users ON DELETE CASCADE,
     exception_start_date DATE NOT NULL,
     exception_end_date DATE NOT NULL,
-    status kid_status NOT NULL
+    status kid_status2 NOT NULL
 );
 
 BEGIN;
@@ -53,7 +54,7 @@ CREATE OR REPLACE FUNCTION status (user1 VARCHAR(512), date1 DATE) RETURNS kid_s
     start_at1 DATE;
     statuses1 kid_status[];
     status1 kid_status;
-    exception_status kid_status;
+    exception_status kid_status2;
     exception_start_date1 DATE;
     exception_end_date1 DATE;
   BEGIN

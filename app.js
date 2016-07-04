@@ -11,14 +11,14 @@ app.get('/', function(req, res) {
     res.send("Tervetuloa");
 });
 
-app.get('/api/status/:fb_token/:date', function(req, res) {
+app.get('/api/statuses/:fb_token/:date', function(req, res) { // hae status
 
     // validoi fb_token
     var user = req.params.fb_token; // ja tän tilalle jotain muuta myöhemmin
     var firstName = "";
     var lastName = "";
 
-    console.log("status: user: " + user + ", date: " + req.params.date);
+    console.log("statuses: user: " + user + ", date: " + req.params.date);
     db.one("SELECT status($1, $2)", [user, req.params.date])
         .then(function(data) {
             if (data.status != null) {
@@ -29,14 +29,24 @@ app.get('/api/status/:fb_token/:date', function(req, res) {
                     status: data.status
                 }
                 res.send(result);
-            } else {
-                res.send("not found...");
+                res.status(200)
+                    .json({
+                        status: 'success',
+                        data: result,
+                        message: 'Retrieved user status'
+                    });
+             } else {
+                res.status(404)
+                    .json({
+                        status: 'not found',
+                        message: 'User was not found'
+                    });
             }
         })
 });
 
 /*
-app.get('/api/friends_status/:fb_token/:date', function(req, res) {
+app.get('/api/friends_statuses/:fb_token/:date', function(req, res) { // hae kavereiden statukset
     var friends = [];
     var i;
     var len;
@@ -58,20 +68,55 @@ app.get('/api/friends_status/:fb_token/:date', function(req, res) {
 })
 */
 
+/* 
+app.get('/api/month_statuses/:fb_token/:date, function(req, res) { // hae kuukauden statukset
+        
+}')
+*/
+
 /*
-app.get('/api/exceptions/:fb_token/:date', function(req, res) {
+app.post('/api/statuses/:fb_token/...', function(req, res) { // luo uusi patterni
+    
+})
+*/
+
+app.get('/api/exceptions/:fb_token/:date', function(req, res) { // hae poikkeukset
 
     // validoi fb_token
     var user = req.params.fb_token; // ja tän tilalle jotain muuta myöhemmin
 
     console.log("exceptions: user: " + user + ", date: " + req.params.date);
-    db.one("SELECT exception_start_date, exception_end_date, status FROM exceptions WHERE user_id=$1 AND exception_end_date>=$2 ORDER BY exception_start_date", [user, req.params.date])
+    db.any("SELECT exception_start_date, exception_end_date, status FROM exceptions WHERE user_id=$1 AND exception_end_date>=$2 ORDER BY exception_start_date", [user, req.params.date])
         .then(function(data) {
-            res.send(data.); // tätä pitää muuttaa palauttamaan kaikki rivit taulukkona
+            if (data.length > 0) {
+                res.status(200)
+                    .json({
+                        status: 'success',
+                        data: data,
+                        message: 'Retrieved ' + data.length + ' exceptions'
+                    });
+            } else {
+                res.status(404)
+                    .json({
+                        status: 'not found',
+                        message: 'No exceptions found'
+                    });
+            }
         })
         .catch(function(err) {
             res.send("Not found... " + err);
         })
+})
+
+/*
+app.post('/api/exceptions/:fb_token/...', function(req, res) { // luo uusi poikkeus
+
+})
+*/
+
+/*
+app.delete('/api/exceptions/:fb_token/:id', function(req, res) { // poista poikkeus
+    
 })
 */
 
