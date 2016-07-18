@@ -1,9 +1,10 @@
 var express = require('express');
 var app = express();
-
+var logger = require("morgan");
 var pgp = require("pg-promise")(/*options*/);
 var db = pgp("postgres://kidweek:123@localhost:5432/kw");
 
+app.use(logger('dev'));
 app.set('port', (process.env.PORT || 5000));
 
 app.get('/', function(req, res) {
