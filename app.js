@@ -42,7 +42,7 @@ app.get('/api/statuses/:fb_token/:date', function(req, res) { // hae status
     // validoi fb_token
     var user = req.params.fb_token; // ja tän tilalle jotain muuta myöhemmin
     
-    fetchStatus(user, req.params.date)
+    fetchStatus(user, new Date(req.params.date))
         .then(function(data) {
             res.status(200)
                 .json({
