@@ -11,13 +11,42 @@ app.get('/', function(req, res) {
     res.send("Tervetuloa");
 });
 
-app.get('/api/statuses/:fb_token/calendar/:year/:month', function(req, res) { // hae status kuukaudelle
-    var user = req.params.fb_token;
-    var month = req.params.month - 1;
+app.get('/api/status/:date/:fb_token', function(req, res) { // hae status
+
+    // validoi fb_token
+    var user = req.params.fb_token; // ja tän tilalle jotain muuta myöhemmin
+
+    fetchStatus(user, new Date(req.params.date))
+        .then(function(data) {
+            res.status(200)
+                .json({
+                    status: 'success',
+                    data: data,
+                    message: 'Retrieved user status'
+                });
+        })
+        .catch(function(e) {
+            console.log(e);        
+            res.status(404)
+                .json({
+                    status: 'not found',
+                    message: 'User was not found'
+                });
+    
+    });
+});
+
+app.get('/api/status/calendar/:year/:month/:fb_token', function(req, res) { // hae oma status kuukaudelle
+    var month = req.params.month;
     var daysInMonth = new Date(req.params.year, month, 0).getDate();
     var statusPromises = [];
+
+    // validoi fb_token
+    var user = req.params.fb_token; // ja tän tilalle jotain muuta myöhemmin
+    
     for (i = 1; i <= daysInMonth; i++) {
-        statusPromises.push(fetchStatus(user, new Date(req.params.year, month, i)));
+        console.log("month: "+month+", day: "+i+", "+new Date(req.params.year, month-1, i));
+        statusPromises.push(fetchStatus(user, new Date(req.params.year, month-1, i)));
     }
     var result = Promise.all(statusPromises);
     result.then(data =>
@@ -38,28 +67,34 @@ app.get('/api/statuses/:fb_token/calendar/:year/:month', function(req, res) { //
     })
 });
 
-app.get('/api/statuses/:fb_token/:date', function(req, res) { // hae status
-    // validoi fb_token
-    var user = req.params.fb_token; // ja tän tilalle jotain muuta myöhemmin
+app.get('/api/status/calendar/:year/:month/:user/:fb_token', function(req, res) { // hae kaverin status kuukaudelle
+    var month = req.params.month;
+    var daysInMonth = new Date(req.params.year, month, 0).getDate();
+    var statusPromises = [];
+
+    // validoi fb_token ja kaveri
     
-    fetchStatus(user, new Date(req.params.date))
-        .then(function(data) {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    data: data,
-                    message: 'Retrieved user status'
-                });
-        })
-        .catch(function(e) {
-            console.log(e);        
-            res.status(404)
-                .json({
-                    status: 'not found',
-                    message: 'User was not found'
-                });
-    
-    });
+    for (i = 1; i <= daysInMonth; i++) {
+        console.log("month: "+month+", day: "+i+", "+new Date(req.params.year, month-1, i));
+        statusPromises.push(fetchStatus(req.params.user, new Date(req.params.year, month-1, i)));
+    }
+    var result = Promise.all(statusPromises);
+    result.then(data =>
+        res.status(200)
+            .json({
+                status: 'success',
+                data: data,
+                message: 'Retrieved user status'
+            })
+        )
+    .catch(function(e) {
+        console.log(e);        
+        res.status(404)
+            .json({
+                status: 'not found',
+                message: 'User was not found'
+            });
+    })
 });
 
 app.get('/api/friends_status/:date/:fb_token', function(req, res) { // hae kavereiden statukset annetulle päivälle
@@ -95,22 +130,9 @@ app.get('/api/friends_status/:date/:fb_token', function(req, res) { // hae kaver
                 message: 'Friend not found'
             });
     })
-/*
-    len = friends.length;
-    for (i=0; i<len; i++) { 
-        // tähän jotenkin se statusten haku ("SELECT status($1, $2)", [friends[i].user_id, req.params.date])
-        friends[i].status = "";
-    }
-
-    res.status(200)
-    .json({
-        status: 'success',
-        data: friends,
-        message: "'Retrieved friends' statuses"
-    });
-*/
 
 })
+
 app.get('/api/exceptions/:date/:fb_token', function(req, res) { // hae poikkeukset, jotka eivät ole vielä menneet ohi annettuna päivänä
 
     // validoi fb_token
@@ -165,36 +187,6 @@ app.delete('/api/exceptions/:id/:fb_token', function(req, res) { // poista poikk
         })
     
 })
-
-
-/*
-app.get('/api/friends_statuses/:fb_token/:date', function(req, res) { // hae kavereiden statukset
-    var friends = [];
-    var i;
-    var len;
-    
-    // validoi fb_token ja palauta kaverit
-    friends.push ({user_id: "abc123", first_name: "", last_name: ""};
-    friends.push ({user_id: "qwe321", first_name: "", last_name: ""};
-    
-    console.log("friends_status: user: " + user + ", date: " + req.params.date);
-    
-    len = friends.length;
-    for (i=0; i<len; i++) { // tätä pitää muuttaa käymään koko taulukko läpi
-        db.one("SELECT status($1, $2)", [friends[i].user_id, req.params.date])
-            .then(function(data) {
-                friends[i].status = data.status;
-            })
-    })
-    res.send(friends);    
-})
-*/
-
-/* 
-app.get('/api/month_statuses/:fb_token/:date, function(req, res) { // hae kuukauden statukset
-        
-}')
-*/
 
 /*
 app.post('/api/statuses/:fb_token/...', function(req, res) { // luo uusi patterni
