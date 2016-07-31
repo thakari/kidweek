@@ -62,23 +62,111 @@ app.get('/api/statuses/:fb_token/:date', function(req, res) { // hae status
     });
 });
 
-var fetchStatus = function(userId, date) {
-    return db.one("SELECT status($1, $2)", [userId, date])
+app.get('/api/friends_status/:date/:fb_token', function(req, res) { // hae kavereiden statukset annetulle päivälle
+    // validoi fb_token ja palauta kaverit
+    var user = req.params.fb_token; // ja tän tilalle jotain muuta myöhemmin
+
+    var friends = [];
+    friends.push ({user_id: "abc123", first_name: "", last_name: ""});
+    friends.push ({user_id: "qwe321", first_name: "", last_name: ""});
+
+    var date = new Date(req.params.date);
+    console.log("GET friends_status: user: " + user + ", date: " + date);
+    
+    var statusPromises = [];
+    friends.forEach(function(friend) {
+        statusPromises.push(fetchStatus(friend.user_id, date));
+    });
+                            
+    var result = Promise.all(statusPromises);
+    result.then(data =>
+        res.status(200)
+            .json({
+                status: 'success',
+                data: data,
+                message: 'Retrieved friends\' statuses'
+            })
+        )
+    .catch(function(e) {
+        console.log(e);        
+        res.status(404)
+            .json({
+                status: 'not found',
+                message: 'Friend not found'
+            });
+    })
+/*
+    len = friends.length;
+    for (i=0; i<len; i++) { 
+        // tähän jotenkin se statusten haku ("SELECT status($1, $2)", [friends[i].user_id, req.params.date])
+        friends[i].status = "";
+    }
+
+    res.status(200)
+    .json({
+        status: 'success',
+        data: friends,
+        message: "'Retrieved friends' statuses"
+    });
+*/
+
+})
+app.get('/api/exceptions/:date/:fb_token', function(req, res) { // hae poikkeukset, jotka eivät ole vielä menneet ohi annettuna päivänä
+
+    // validoi fb_token
+    var user = req.params.fb_token; // ja tän tilalle jotain muuta myöhemmin
+
+    console.log("GET exceptions: user: " + user + ", date: " + req.params.date);
+    db.any("SELECT exception_start_date, exception_end_date, status, id FROM exceptions WHERE user_id=$1 AND exception_end_date>=$2 ORDER BY exception_start_date", [user, req.params.date])
         .then(function(data) {
-            if (data.status != null) {
-                return {
-                    user_id: userId,
-                    first_name: "firstName",
-                    last_name: "lastName",
-                    status: data.status,
-                    date: date.toISOString().substring(0, 10)
-                    
-                };
-             } else {
-                 throw "User " + userId + " status not found for " + date;
-             } 
+            if (data.length > 0) {
+                res.status(200)
+                    .json({
+                        status: 'success',
+                        data: data,
+                        message: 'Retrieved ' + data.length + ' exceptions'
+                    });
+            } else {
+                res.status(404)
+                    .json({
+                        status: 'not found',
+                        message: 'No exceptions found'
+                    });
+            }
         })
-}
+        .catch(function(err) {
+            res.send("Not found... " + err);
+        })
+})
+
+/*
+app.post('/api/exceptions/:fb_token/...', function(req, res) { // luo uusi poikkeus
+
+})
+*/
+
+app.delete('/api/exceptions/:id/:fb_token', function(req, res) { // poista poikkeus
+
+    // validoi fb_token
+    var user = req.params.fb_token; // ja tän tilalle jotain muuta myöhemmin
+
+    console.log("DELETE exceptions: user: " + user + ", date: " + req.params.date);
+    db.one("DELETE FROM exceptions WHERE user_id=$1 AND id=$2", [user, req.params.id])
+        .then(function(data) {
+            res.status(200)
+                .json({
+                    status: 'success',
+                    data: data,
+                    message: 'Deleted'
+                });
+        })
+        .catch(function(err) {
+            res.send("Not found... " + err);
+        })
+    
+})
+
+
 /*
 app.get('/api/friends_statuses/:fb_token/:date', function(req, res) { // hae kavereiden statukset
     var friends = [];
@@ -154,39 +242,23 @@ app.delete('/api/exceptions/:fb_token/:id', function(req, res) { // poista poikk
 })
 */
 
-/*
-app.get('/api/status/:date', function (req, res) {
-    console.log("Date in req is" + req.params.date);
-    var queryDate = new Date(req.params.date);
-    db.one("select start_at, array_to_json(statuses) as stats from patterns where user_id=$1", 'qwe321')
+var fetchStatus = function(userId, date) {
+    return db.one("SELECT status($1, $2)", [userId, date])
         .then(function(data) {
-            console.log("Got here " + data.start_at);
-            var length = data.stats.length;
-            var d = data.start_at;
-            var today = new Date();
-            var currentDate = data.start_at;
-            var finalStatus = 'none';
-            while (currentDate <= queryDate) {
-                var a = data.stats.some(function(entry) {
-                    finalStatus = entry;
-                    console.log('prosessing' + currentDate.getDate() + ', status is ' + entry);
-                    if (currentDate >= today) {
-                        console.log("Status is " + finalStatus);
-                        return true;
-                    } else {
-                        currentDate.setDate(currentDate.getDate() + 1);
-                    }
-                })  
-            }
-            console.log("Status " + finalStatus);
-            var result = {
-                status: finalStatus,
-                name: "John Doe"
-            }
-            res.send(result);
-    })
-});
-*/
+            if (data.status != null) {
+                return {
+                    user_id: userId,
+                    first_name: "firstName",
+                    last_name: "lastName",
+                    status: data.status,
+                    date: date.toISOString().substring(0, 10)
+                    
+                };
+             } else {
+                 throw "User " + userId + " status not found for " + date;
+             } 
+        })
+}
 
 app.listen(app.get('port'), function () {
   console.log('Example app listening on port ' + app.get('port') + '!');
