@@ -3,8 +3,10 @@ var app = express();
 var pgp = require("pg-promise")(/*options*/);
 var db = pgp("postgres://kidweek:123@localhost:5432/kw");
 var logger = require("morgan");
+var bodyParser = require("body-parser");
 
 app.use(logger('dev'));
+app.use(bodyParser.json());
 app.set('port', (process.env.PORT || 5000));
 
 app.get('/', function(req, res) {
@@ -222,11 +224,24 @@ app.get('/api/exceptions/:fb_token/:date', function(req, res) { // hae poikkeuks
         })
 })
 
-/*
-app.post('/api/exceptions/:fb_token/...', function(req, res) { // luo uusi poikkeus
 
+app.post('/api/exceptions/:fb_token', function(req, res) { // luo uusi poikkeus
+    
+    var user = req.params.fb_token;
+    var startDate = req.body.startDate;
+    var endDate = req.body.endDate;
+    var status = req.body.status;
+
+    db.none("INSERT INTO exceptions (user_id, exception_start_date, exception_end_date, status) VALUES ($1, $2, $3, $4)", [user, startDate, endDate, status])
+        .then(function() {
+            console.log("inserted");
+            res.status(200).end();
+        })
+        .catch(function(err) {
+            console.log(e);        
+            res.status(500).end();
+        })
 })
-*/
 
 /*
 app.delete('/api/exceptions/:fb_token/:id', function(req, res) { // poista poikkeus

@@ -28,6 +28,7 @@ CREATE TABLE exceptions (
     exception_start_date DATE NOT NULL,
     exception_end_date DATE NOT NULL,
     status kid_status2 NOT NULL
+    /* UNIQUE(user_id, exception_start_date, exception_end_date) */
 );
 
 
