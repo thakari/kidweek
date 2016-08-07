@@ -20,23 +20,22 @@ app.get('/api/status/:date/:fb_token', function(req, res) { // hae status
 
     fetchStatus(user, new Date(req.params.date))
         .then(function(data) {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    data: data,
-                    message: 'Retrieved user status'
-                });
+            res.status(200).json({
+                status: 'success',
+                data: data,
+                message: 'Retrieved user status'
+            });
         })
         .catch(function(e) {
-            console.log(e);        
-            res.status(404)
-                .json({
-                    status: 'not found',
-                    message: 'User was not found'
-                });
+            console.log(e);
+            res.status(404).json({
+                status: 'not found',
+                message: 'User was not found'
+            });
     
-    });
-});
+        });
+})
+
 
 app.get('/api/status/calendar/:year/:month/:fb_token', function(req, res) { // hae oma status kuukaudelle
     var month = req.params.month;
@@ -52,22 +51,21 @@ app.get('/api/status/calendar/:year/:month/:fb_token', function(req, res) { // h
     }
     var result = Promise.all(statusPromises);
     result.then(data =>
-        res.status(200)
-            .json({
-                status: 'success',
-                data: data,
-                message: 'Retrieved user status'
-            })
-        )
+        res.status(200).json({
+            status: 'success',
+            data: data,
+            message: 'Retrieved user status'
+        })
+    )
     .catch(function(e) {
-        console.log(e);        
-        res.status(404)
-            .json({
-                status: 'not found',
-                message: 'User was not found'
-            });
+        console.log(e);
+        res.status(404).json({
+            status: 'not found',
+            message: 'User was not found'
+        });
     })
-});
+})
+
 
 app.get('/api/status/calendar/:year/:month/:user/:fb_token', function(req, res) { // hae kaverin status kuukaudelle
     var month = req.params.month;
@@ -90,14 +88,14 @@ app.get('/api/status/calendar/:year/:month/:user/:fb_token', function(req, res) 
             })
         )
     .catch(function(e) {
-        console.log(e);        
-        res.status(404)
-            .json({
-                status: 'not found',
-                message: 'User was not found'
-            });
+        console.log(e); 
+        res.status(404).json({
+            status: 'not found',
+            message: 'User was not found'
+        });
     })
-});
+})
+
 
 app.get('/api/friends_status/:date/:fb_token', function(req, res) { // hae kavereiden statukset annetulle päivälle
     // validoi fb_token ja palauta kaverit
@@ -125,15 +123,15 @@ app.get('/api/friends_status/:date/:fb_token', function(req, res) { // hae kaver
             })
         )
     .catch(function(e) {
-        console.log(e);        
-        res.status(404)
-            .json({
-                status: 'not found',
-                message: 'Friend not found'
-            });
+        console.log(e);
+        res.status(404).json({
+            status: 'not found',
+            message: 'Friend not found'
+        });
     })
 
 })
+
 
 app.get('/api/exceptions/:date/:fb_token', function(req, res) { // hae poikkeukset, jotka eivät ole vielä menneet ohi annettuna päivänä
 
@@ -151,11 +149,10 @@ app.get('/api/exceptions/:date/:fb_token', function(req, res) { // hae poikkeuks
                         message: 'Retrieved ' + data.length + ' exceptions'
                     });
             } else {
-                res.status(404)
-                    .json({
-                        status: 'not found',
-                        message: 'No exceptions found'
-                    });
+                res.status(404).json({
+                    status: 'not found',
+                    message: 'No exceptions found'
+                });
             }
         })
         .catch(function(err) {
@@ -163,91 +160,91 @@ app.get('/api/exceptions/:date/:fb_token', function(req, res) { // hae poikkeuks
         })
 })
 
-/*
-app.post('/api/exceptions/:fb_token/...', function(req, res) { // luo uusi poikkeus
-
-})
-*/
 
 app.delete('/api/exceptions/:id/:fb_token', function(req, res) { // poista poikkeus
 
     // validoi fb_token
     var user = req.params.fb_token; // ja tän tilalle jotain muuta myöhemmin
 
-    console.log("DELETE exceptions: user: " + user + ", date: " + req.params.date);
     db.one("DELETE FROM exceptions WHERE user_id=$1 AND id=$2", [user, req.params.id])
         .then(function(data) {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    data: data,
-                    message: 'Deleted'
-                });
+            res.status(204).json({
+                status: 'success',
+                data: data,
+                message: 'Deleted'
+            });
         })
         .catch(function(err) {
             res.send("Not found... " + err);
         })
     
-})
-
-/*
-app.post('/api/statuses/:fb_token/...', function(req, res) { // luo uusi patterni
-    
-})
-*/
-
-app.get('/api/exceptions/:fb_token/:date', function(req, res) { // hae poikkeukset
-
-    // validoi fb_token
-    var user = req.params.fb_token; // ja tän tilalle jotain muuta myöhemmin
-
-    console.log("exceptions: user: " + user + ", date: " + req.params.date);
-    db.any("SELECT exception_start_date, exception_end_date, status FROM exceptions WHERE user_id=$1 AND exception_end_date>=$2 ORDER BY exception_start_date", [user, req.params.date])
-        .then(function(data) {
-            if (data.length > 0) {
-                res.status(200)
-                    .json({
-                        status: 'success',
-                        data: data,
-                        message: 'Retrieved ' + data.length + ' exceptions'
-                    });
-            } else {
-                res.status(404)
-                    .json({
-                        status: 'not found',
-                        message: 'No exceptions found'
-                    });
-            }
-        })
-        .catch(function(err) {
-            res.send("Not found... " + err);
-        })
 })
 
 
 app.post('/api/exceptions/:fb_token', function(req, res) { // luo uusi poikkeus
     
-    var user = req.params.fb_token;
     var startDate = req.body.startDate;
     var endDate = req.body.endDate;
     var status = req.body.status;
 
+    // validoi fb_token
+    var user = req.params.fb_token; // ja tän tilalle jotain muuta myöhemmin
+
+    if (startDate >= endDate) {
+        res.status(400).json({
+            status: 'failed',
+            message: 'startDate not before endDate'
+        });
+    }
+    
     db.none("INSERT INTO exceptions (user_id, exception_start_date, exception_end_date, status) VALUES ($1, $2, $3, $4)", [user, startDate, endDate, status])
         .then(function() {
-            console.log("inserted");
-            res.status(200).end();
+            res.status(201).end();
         })
         .catch(function(err) {
-            console.log(e);        
-            res.status(500).end();
+            console.log(err);
+                res.status(400).json({
+                status: "failed",
+                message: err
+            })
         })
 })
 
-/*
-app.delete('/api/exceptions/:fb_token/:id', function(req, res) { // poista poikkeus
+
+app.post('/api/pattern/:fb_token', function(req, res) { // luo uusi patterni
     
+    var startDate = req.body.startDate;
+    var statuses = req.body.statuses;
+    var patternLength = statuses.length;
+    
+    // validoi fb_token
+    var user = req.params.fb_token; // ja tän tilalle jotain muuta myöhemmin
+
+    if ((patternLength % 7) != 0 && patternLength != 1) {
+        res.status(400).json({
+            status: 'failed',
+            message: 'Invalid array length'
+        });
+    }
+
+    var patternString = '{"' + statuses[0] + '"';
+    for (i = 1; i < patternLength; i++) {
+        patternString = patternString + ', "' + statuses[i] + '"';
+    }
+    patternString = patternString + '}';
+  
+    db.none("INSERT INTO patterns (user_id, start_at, statuses, created_on) VALUES ($1, $2, $3, NOW())", [user, startDate, patternString])
+        .then(function() {
+            res.status(201).end();
+        })
+        .catch(function(err) {
+            console.log(err);
+                res.status(400).json({
+                status: "failed",
+                message: err
+            });
+        })    
 })
-*/
 
 var fetchStatus = function(userId, date) {
     return db.one("SELECT status($1, $2)", [userId, date])
