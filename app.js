@@ -41,13 +41,15 @@ app.get('/api/status/calendar/:year/:month/:fb_token', function(req, res) { // h
     var month = req.params.month;
     var daysInMonth = new Date(req.params.year, month, 0).getDate();
     var statusPromises = [];
+    var day;
 
     // validoi fb_token
     var user = req.params.fb_token; // ja tän tilalle jotain muuta myöhemmin
     
     for (i = 1; i <= daysInMonth; i++) {
-        console.log("month: "+month+", day: "+i+", "+new Date(req.params.year, month-1, i));
-        statusPromises.push(fetchStatus(user, new Date(req.params.year, month-1, i)));
+        day = new Date(req.params.year, month-1, i);
+        console.log("month: " + month + ", day: " + i + ", " + day);
+        statusPromises.push(fetchStatusAndName(user, day, "", ""));
     }
     var result = Promise.all(statusPromises);
     result.then(data =>
@@ -98,6 +100,7 @@ app.get('/api/status/calendar/:year/:month/:user/:fb_token', function(req, res) 
 
 
 app.get('/api/friends_status/:date/:fb_token', function(req, res) { // hae kavereiden statukset annetulle päivälle
+
     // validoi fb_token ja palauta kaverit
     var user = req.params.fb_token; // ja tän tilalle jotain muuta myöhemmin
 
@@ -110,7 +113,7 @@ app.get('/api/friends_status/:date/:fb_token', function(req, res) { // hae kaver
     
     var statusPromises = [];
     friends.forEach(function(friend) {
-        statusPromises.push(fetchStatus(friend.user_id, date));
+        statusPromises.push(fetchStatusAndName(friend.user_id, date, friend.first_name, friend.last_name));
     });
                             
     var result = Promise.all(statusPromises);
@@ -246,17 +249,33 @@ app.post('/api/pattern/:fb_token', function(req, res) { // luo uusi patterni
         })    
 })
 
-var fetchStatus = function(userId, date) {
+var fetchStatusAndName = function(userId, date, firstName, lastName) {
     return db.one("SELECT status($1, $2)", [userId, date])
         .then(function(data) {
             if (data.status != null) {
                 return {
                     user_id: userId,
-                    first_name: "firstName",
-                    last_name: "lastName",
+                    first_name: firstName,
+                    last_name: lastName,
+                    status: data.status,
+//                  date: date.toISOString().substring(0, 10)
+                };
+             } else {
+                 throw "User " + userId + " status not found for " + date;
+             } 
+        })
+}
+
+var fetchStatus = function(userId, date) {
+    return db.one("SELECT status($1, $2)", [userId, date])
+        .then(function(data) {
+            if (data.status != null) {
+                return {
+//                  user_id: userId,
+//                  first_name: "firstName",
+//                  last_name: "lastName",
                     status: data.status,
                     date: date.toISOString().substring(0, 10)
-                    
                 };
              } else {
                  throw "User " + userId + " status not found for " + date;
