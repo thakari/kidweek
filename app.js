@@ -49,7 +49,7 @@ app.get('/api/status/calendar/:year/:month/:fb_token', function(req, res) { // h
     for (i = 1; i <= daysInMonth; i++) {
         day = new Date(req.params.year, month-1, i);
         console.log("month: " + month + ", day: " + i + ", " + day);
-        statusPromises.push(fetchStatusAndName(user, day, "", ""));
+        statusPromises.push(fetchStatus(user, day));
     }
     var result = Promise.all(statusPromises);
     result.then(data =>
@@ -107,9 +107,9 @@ app.get('/api/friends_status/:date/:fb_token', function(req, res) { // hae kaver
     var friends = [];
     friends.push ({user_id: "abc123", first_name: "", last_name: ""});
     friends.push ({user_id: "qwe321", first_name: "", last_name: ""});
+    friends.push ({user_id: "xyz", first_name: "", last_name: ""});
 
     var date = new Date(req.params.date);
-    console.log("GET friends_status: user: " + user + ", date: " + date);
     
     var statusPromises = [];
     friends.forEach(function(friend) {
@@ -121,7 +121,7 @@ app.get('/api/friends_status/:date/:fb_token', function(req, res) { // hae kaver
         res.status(200)
             .json({
                 status: 'success',
-                data: data,
+                data: {date: date, friends: data},
                 message: 'Retrieved friends\' statuses'
             })
         )
@@ -258,25 +258,25 @@ var fetchStatusAndName = function(userId, date, firstName, lastName) {
                     first_name: firstName,
                     last_name: lastName,
                     status: data.status,
-//                  date: date.toISOString().substring(0, 10)
                 };
-             } else {
-                 throw "User " + userId + " status not found for " + date;
              } 
         })
 }
 
 var fetchStatus = function(userId, date) {
+    console.log("fetchStatus: date: "+date);
     return db.one("SELECT status($1, $2)", [userId, date])
         .then(function(data) {
             if (data.status != null) {
-                return {
+                var result = {
 //                  user_id: userId,
 //                  first_name: "firstName",
 //                  last_name: "lastName",
                     status: data.status,
                     date: date.toISOString().substring(0, 10)
                 };
+                console.log(result);
+                return result;
              } else {
                  throw "User " + userId + " status not found for " + date;
              } 
