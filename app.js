@@ -75,6 +75,8 @@ app.get('/api/status/calendar/:year/:month/:user/:fb_token', function(req, res) 
     var statusPromises = [];
 
     // validoi fb_token ja kaveri
+    var firstName = "";
+    var lastName = "";
     
     for (i = 1; i <= daysInMonth; i++) {
         console.log("month: "+month+", day: "+i+", "+new Date(req.params.year, month-1, i));
@@ -85,7 +87,7 @@ app.get('/api/status/calendar/:year/:month/:user/:fb_token', function(req, res) 
         res.status(200)
             .json({
                 status: 'success',
-                data: data,
+                data: {first_name: firstName, last_name: lastName, statuses: data},
                 message: 'Retrieved user status'
             })
         )
@@ -121,7 +123,7 @@ app.get('/api/friends_status/:date/:fb_token', function(req, res) { // hae kaver
         res.status(200)
             .json({
                 status: 'success',
-                data: {date: date, friends: data},
+                data: {date: date, statuses: data},
                 message: 'Retrieved friends\' statuses'
             })
         )
@@ -152,14 +154,17 @@ app.get('/api/exceptions/:date/:fb_token', function(req, res) { // hae poikkeuks
                         message: 'Retrieved ' + data.length + ' exceptions'
                     });
             } else {
-                res.status(404).json({
+                res.status(400).json({
                     status: 'not found',
                     message: 'No exceptions found'
                 });
             }
         })
         .catch(function(err) {
-            res.send("Not found... " + err);
+            res.status(400).json({
+                status: 'failed',
+                message: err
+            });
         })
 })
 
@@ -169,18 +174,26 @@ app.delete('/api/exceptions/:id/:fb_token', function(req, res) { // poista poikk
     // validoi fb_token
     var user = req.params.fb_token; // ja tän tilalle jotain muuta myöhemmin
 
-    db.one("DELETE FROM exceptions WHERE user_id=$1 AND id=$2", [user, req.params.id])
-        .then(function(data) {
-            res.status(204).json({
-                status: 'success',
-                data: data,
-                message: 'Deleted'
-            });
+    db.result("DELETE FROM exceptions WHERE user_id=$1 AND id=$2", [user, req.params.id])
+        .then(function(result) {
+            console.log(result);
+            if (result.rowCount == 1) {
+                res.status(204).end();
+            }
+            else {
+                res.status(400).json({
+                    status: 'failed',
+                    message: 'not found'
+                });
+            }
         })
         .catch(function(err) {
-            res.send("Not found... " + err);
-        })
-    
+            console.log(err);
+            res.status(400).json({
+                status: 'failed',
+                message: err
+            });
+        })    
 })
 
 
@@ -205,7 +218,6 @@ app.post('/api/exceptions/:fb_token', function(req, res) { // luo uusi poikkeus
             res.status(201).end();
         })
         .catch(function(err) {
-            console.log(err);
                 res.status(400).json({
                 status: "failed",
                 message: err
