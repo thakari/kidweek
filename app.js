@@ -13,10 +13,11 @@ app.get('/', function(req, res) {
     res.send("Tervetuloa");
 });
 
-app.get('/api/status/:date/:fb_token', function(req, res) { // hae status
+
+app.get('/api/me/status/:date', function(req, res) { // hae status
 
     // validoi fb_token
-    var user = req.params.fb_token; // ja tän tilalle jotain muuta myöhemmin
+    var user = req.query.fb_token; // ja tän tilalle jotain muuta myöhemmin
 
     fetchStatus(user, new Date(req.params.date))
         .then(function(data) {
@@ -37,14 +38,14 @@ app.get('/api/status/:date/:fb_token', function(req, res) { // hae status
 })
 
 
-app.get('/api/status/calendar/:year/:month/:fb_token', function(req, res) { // hae oma status kuukaudelle
+app.get('/api/me/calendar/:year/:month/', function(req, res) { // hae oma status kuukaudelle
     var month = req.params.month;
     var daysInMonth = new Date(req.params.year, month, 0).getDate();
     var statusPromises = [];
     var day;
 
     // validoi fb_token
-    var user = req.params.fb_token; // ja tän tilalle jotain muuta myöhemmin
+    var user = req.query.fb_token; // ja tän tilalle jotain muuta myöhemmin
     
     for (i = 1; i <= daysInMonth; i++) {
         day = new Date(req.params.year, month-1, i);
@@ -69,12 +70,12 @@ app.get('/api/status/calendar/:year/:month/:fb_token', function(req, res) { // h
 })
 
 
-app.get('/api/status/calendar/:year/:month/:user/:fb_token', function(req, res) { // hae kaverin status kuukaudelle
+app.get('/api/:user/calendar/:year/:month', function(req, res) { // hae kaverin status kuukaudelle
     var month = req.params.month;
     var daysInMonth = new Date(req.params.year, month, 0).getDate();
     var statusPromises = [];
 
-    // validoi fb_token ja kaveri
+    // validoi req.query.fb_token ja kaveri
     var firstName = "";
     var lastName = "";
     
@@ -101,10 +102,10 @@ app.get('/api/status/calendar/:year/:month/:user/:fb_token', function(req, res) 
 })
 
 
-app.get('/api/friends_status/:date/:fb_token', function(req, res) { // hae kavereiden statukset annetulle päivälle
+app.get('/api/me/friends/:date', function(req, res) { // hae kavereiden statukset annetulle päivälle
 
     // validoi fb_token ja palauta kaverit
-    var user = req.params.fb_token; // ja tän tilalle jotain muuta myöhemmin
+    var user = req.query.fb_token; // ja tän tilalle jotain muuta myöhemmin
 
     var friends = [];
     friends.push ({user_id: "abc123", first_name: "", last_name: ""});
@@ -138,12 +139,11 @@ app.get('/api/friends_status/:date/:fb_token', function(req, res) { // hae kaver
 })
 
 
-app.get('/api/exceptions/:date/:fb_token', function(req, res) { // hae poikkeukset, jotka eivät ole vielä menneet ohi annettuna päivänä
+app.get('/api/me/exception/:date', function(req, res) { // hae poikkeukset, jotka eivät ole vielä menneet ohi annettuna päivänä
 
     // validoi fb_token
-    var user = req.params.fb_token; // ja tän tilalle jotain muuta myöhemmin
+    var user = req.query.fb_token; // ja tän tilalle jotain muuta myöhemmin
 
-    console.log("GET exceptions: user: " + user + ", date: " + req.params.date);
     db.any("SELECT exception_start_date, exception_end_date, status, id FROM exceptions WHERE user_id=$1 AND exception_end_date>=$2 ORDER BY exception_start_date", [user, req.params.date])
         .then(function(data) {
             if (data.length > 0) {
@@ -169,16 +169,16 @@ app.get('/api/exceptions/:date/:fb_token', function(req, res) { // hae poikkeuks
 })
 
 
-app.delete('/api/exceptions/:id/:fb_token', function(req, res) { // poista poikkeus
+app.delete('/api/me/exception/:id', function(req, res) { // poista poikkeus
 
     // validoi fb_token
-    var user = req.params.fb_token; // ja tän tilalle jotain muuta myöhemmin
+    var user = req.query.fb_token; // ja tän tilalle jotain muuta myöhemmin
 
     db.result("DELETE FROM exceptions WHERE user_id=$1 AND id=$2", [user, req.params.id])
         .then(function(result) {
             console.log(result);
             if (result.rowCount == 1) {
-                res.status(204).end();
+                res.status(200).end();
             }
             else {
                 res.status(400).json({
@@ -197,14 +197,14 @@ app.delete('/api/exceptions/:id/:fb_token', function(req, res) { // poista poikk
 })
 
 
-app.post('/api/exceptions/:fb_token', function(req, res) { // luo uusi poikkeus
+app.post('/api/me/exception', function(req, res) { // luo uusi poikkeus
     
     var startDate = req.body.startDate;
     var endDate = req.body.endDate;
     var status = req.body.status;
 
     // validoi fb_token
-    var user = req.params.fb_token; // ja tän tilalle jotain muuta myöhemmin
+    var user = req.query.fb_token; // ja tän tilalle jotain muuta myöhemmin
 
     if (startDate >= endDate) {
         res.status(400).json({
@@ -226,14 +226,37 @@ app.post('/api/exceptions/:fb_token', function(req, res) { // luo uusi poikkeus
 })
 
 
-app.post('/api/pattern/:fb_token', function(req, res) { // luo uusi patterni
+app.get('/api/me/pattern/:date', function(req, res) { // hae pattern joka on voimassa annettuna päivänä
+
+    // validoi fb_token
+    var user = req.query.fb_token; // ja tän tilalle jotain muuta myöhemmin
+
+    db.one("SELECT start_at, statuses FROM patterns WHERE user_id=$1 AND start_at<=$2 ORDER BY start_at DESC LIMIT 1", [user, req.params.date])
+        .then(function(data) {
+            res.status(200)
+                .json({
+                    status: 'success',
+                    data: data,
+                    message: 'Retrieved pattern'
+            })
+        })
+        .catch(function(err) {
+            res.status(400).json({
+                status: 'failed',
+                message: 'Pattern not found'
+            });
+        })
+})
+
+
+app.post('/api/me/pattern', function(req, res) { // luo uusi patterni
     
     var startDate = req.body.startDate;
     var statuses = req.body.statuses;
     var patternLength = statuses.length;
     
     // validoi fb_token
-    var user = req.params.fb_token; // ja tän tilalle jotain muuta myöhemmin
+    var user = req.query.fb_token; // ja tän tilalle jotain muuta myöhemmin
 
     if ((patternLength % 7) != 0 && patternLength != 1) {
         res.status(400).json({
