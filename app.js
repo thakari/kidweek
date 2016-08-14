@@ -79,8 +79,8 @@ app.get('/api/me/friends/:date', function(req, res) { // hae kavereiden statukse
 
     var friends = [];
     friends.push ({user_id: "abc123", first_name: "", last_name: ""});
+    friends.push ({user_id: "xyz", first_name: "", last_name: ""}); // ei kannassa
     friends.push ({user_id: "qwe321", first_name: "", last_name: ""});
-    friends.push ({user_id: "xyz", first_name: "", last_name: ""});
 
     var date = new Date(req.params.date);
     
@@ -90,14 +90,19 @@ app.get('/api/me/friends/:date', function(req, res) { // hae kavereiden statukse
     });
                             
     var result = Promise.all(statusPromises);
-    result.then(data =>
+    result.then(function(data) {
+        for(i=0; i<data.length; i++) {
+            if (data[i] == undefined) {
+                data.splice(i, 1);
+            }
+        }
         res.status(200)
             .json({
                 status: 'success',
                 data: {date: date, statuses: data},
                 message: 'Retrieved friends\' statuses'
             })
-        )
+    })
     .catch(function(e) {
         console.log(e);
         res.status(404).json({
