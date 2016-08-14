@@ -10,7 +10,7 @@ app.use(bodyParser.json());
 app.set('port', (process.env.PORT || 5000));
 
 app.get('/', function(req, res) {
-    res.send("Tervetuloa");
+    res.send("Welcome to Kidweek");
 });
 
 
@@ -38,53 +38,23 @@ app.get('/api/me/status/:date', function(req, res) { // hae status
 })
 
 
-app.get('/api/me/calendar/:year/:month/', function(req, res) { // hae oma status kuukaudelle
+app.get('/api/me/calendar/:year/:month', function(req, res) { // hae oma status kuukaudelle
+    var year = req.params.year;
     var month = req.params.month;
-    var daysInMonth = new Date(req.params.year, month, 0).getDate();
-    var statusPromises = [];
-    var day;
-
-    // validoi fb_token
-    var user = req.query.fb_token; // ja tän tilalle jotain muuta myöhemmin
+    var user = req.query.fb_token; // todo: käytä oikeaa user id:tä
     
-    for (i = 1; i <= daysInMonth; i++) {
-        day = new Date(req.params.year, month-1, i);
-        console.log("month: " + month + ", day: " + i + ", " + day);
-        statusPromises.push(fetchStatus(user, day));
-    }
-    var result = Promise.all(statusPromises);
-    result.then(data =>
-        res.status(200).json({
-            status: 'success',
-            data: data,
-            message: 'Retrieved user status'
-        })
-    )
-    .catch(function(e) {
-        console.log(e);
-        res.status(404).json({
-            status: 'not found',
-            message: 'User was not found'
-        });
-    })
+    res.redirect('/api/' + user + '/calendar/' + year + '/' + month);
 })
 
 
 app.get('/api/:user/calendar/:year/:month', function(req, res) { // hae kaverin status kuukaudelle
-    var month = req.params.month;
-    var daysInMonth = new Date(req.params.year, month, 0).getDate();
-    var statusPromises = [];
 
-    // validoi req.query.fb_token ja kaveri
+    var result = fetchCalendarWithStatuses(req.params.user, req.params.year, req.params.month);
+    
     var firstName = "";
     var lastName = "";
     
-    for (i = 1; i <= daysInMonth; i++) {
-        console.log("month: "+month+", day: "+i+", "+new Date(req.params.year, month-1, i));
-        statusPromises.push(fetchStatus(req.params.user, new Date(req.params.year, month-1, i)));
-    }
-    var result = Promise.all(statusPromises);
-    result.then(data =>
+   result.then(data =>
         res.status(200)
             .json({
                 status: 'success',
@@ -299,7 +269,6 @@ var fetchStatusAndName = function(userId, date, firstName, lastName) {
 }
 
 var fetchStatus = function(userId, date) {
-    console.log("fetchStatus: date: "+date);
     return db.one("SELECT status($1, $2)", [userId, date])
         .then(function(data) {
             if (data.status != null) {
@@ -318,6 +287,18 @@ var fetchStatus = function(userId, date) {
         })
 }
 
+var fetchCalendarWithStatuses = function(user, year, month) {
+    var daysInMonth = new Date(year, month, 0).getDate();
+    var statusPromises = [];
+
+    for (i = 1; i <= daysInMonth; i++) {
+        var date = new Date(Date.UTC(year, month - 1, i));
+        statusPromises.push(fetchStatus(user, date));
+    }
+    
+    return Promise.all(statusPromises);
+}
+
 app.listen(app.get('port'), function () {
-  console.log('Example app listening on port ' + app.get('port') + '!');
+  console.log('Kidweek listening on port ' + app.get('port') + '!');
 });
