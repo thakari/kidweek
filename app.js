@@ -4,6 +4,7 @@ var pgp = require("pg-promise")(/*options*/);
 var db = pgp("postgres://kidweek:123@localhost:5432/kw");
 var logger = require("morgan");
 var bodyParser = require("body-parser");
+var facebook_app_id = "498488837013856"
 
 app.use(logger('dev'));
 app.use(bodyParser.json());
