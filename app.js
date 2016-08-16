@@ -27,11 +27,7 @@ app.get('/api/me/status/:date', function(req, res) { // hae status
 
     fetchStatus(user, new Date(req.params.date))
         .then(function(data) {
-            res.status(200).json({
-                status: 'success',
-                data: data,
-                message: 'Retrieved user status'
-            });
+            res.status(200).json(data);
         })
         .catch(function(e) {
             console.log(e);
@@ -49,7 +45,7 @@ app.get('/api/me/calendar/:year/:month', function(req, res) { // hae oma status 
     var month = req.params.month;
     var user = req.query.fb_token; // todo: käytä oikeaa user id:tä
     
-    res.redirect('/api/' + user + '/calendar/' + year + '/' + month);
+    res.redirect('/api/' + user + '/calendar/' + year + '/' + month + '?fb_token=' + user);
 })
 
 
@@ -61,12 +57,7 @@ app.get('/api/:user/calendar/:year/:month', function(req, res) { // hae kaverin 
     var lastName = "";
     
    result.then(data =>
-        res.status(200)
-            .json({
-                status: 'success',
-                data: {first_name: firstName, last_name: lastName, statuses: data},
-                message: 'Retrieved user status'
-            })
+        res.status(200).json({first_name: firstName, last_name: lastName, statuses: data})
         )
     .catch(function(e) {
         console.log(e); 
@@ -99,21 +90,24 @@ app.get('/api/me/friends/:date', function(req, res) { // hae kavereiden statukse
     result.then(function(data) {
         for(i=0; i<data.length; i++) {
             if (data[i] == undefined) {
-                data.splice(i, 1);
+                data.splice(i--, 1);
             }
         }
-        res.status(200)
-            .json({
-                status: 'success',
-                data: {date: date, statuses: data},
-                message: 'Retrieved friends\' statuses'
+        if(data.length == 0) {
+            res.status(404).json({
+                status: 'not found',
+                message: 'Friends not found'
             })
+        }
+        else {
+            res.status(200).json({date: date.toISOString().substring(0, 10), statuses: data})
+        }
     })
     .catch(function(e) {
         console.log(e);
         res.status(404).json({
             status: 'not found',
-            message: 'Friend not found'
+            message: 'Friends not found'
         });
     })
 
@@ -257,13 +251,38 @@ app.post('/api/me/pattern', function(req, res) { // luo uusi patterni
             res.status(201).end();
         })
         .catch(function(err) {
+            if(err.code == '22P02') {
+                res.status(400).json({
+                    status: 'failed',
+                    message: 'Invalid status'
+                })
+            }
             console.log(err);
+                res.status(400).json({
+                    status: "failed",
+                    message: err
+                });
+        })    
+})
+
+
+app.post('/api/me', function(req, res) { // luo uusi käyttäjä
+    
+    // validoi fb_token
+    var user = req.query.fb_token; // ja tän tilalle jotain muuta myöhemmin
+
+    db.none("INSERT INTO users (id) VALUES ($1)", user)
+        .then(function() {
+            res.status(201).end();
+        })
+        .catch(function(err) {
                 res.status(400).json({
                 status: "failed",
                 message: err
-            });
-        })    
+            })
+        })
 })
+
 
 var fetchStatusAndName = function(userId, date, firstName, lastName) {
     return db.one("SELECT status($1, $2)", [userId, date])
