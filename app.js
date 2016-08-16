@@ -9,7 +9,8 @@ var db = pgp(dbUrl);
 
 var logger = require("morgan");
 var bodyParser = require("body-parser");
-var facebook_app_id = "498488837013856"
+var facebook_app_id = "498488837013856";
+var apiVersion = "0.2";
 
 app.use(logger('dev'));
 app.use(bodyParser.json());
@@ -21,7 +22,7 @@ app.get('/', function(req, res) {
 
 
 app.get('/api/version', function(req, res) { // hae api-versio
-    res.status(200).json({version: "0.2"});
+    res.status(200).json({version: apiVersion});
 })
 
 

@@ -19,7 +19,7 @@ CREATE TABLE patterns (
     start_at DATE NOT NULL,
     statuses kid_status[] NOT NULL,
     created_on TIMESTAMP NOT NULL,
-    UNIQUE(user_id)
+/*    UNIQUE(user_id) */
 );
 
 CREATE TABLE exceptions (
