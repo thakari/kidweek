@@ -20,6 +20,11 @@ app.get('/', function(req, res) {
 });
 
 
+app.get('/api/version', function(req, res) { // hae api-versio
+    res.status(200).json({version: "0.2"});
+})
+
+
 app.get('/api/me/status/:date', function(req, res) { // hae status
 
     // validoi fb_token
