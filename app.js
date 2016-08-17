@@ -36,12 +36,13 @@ app.get('/api/me/status/:date', function(req, res) { // hae status
             res.status(200).json(data);
         })
         .catch(function(e) {
-            console.log(e);
-            res.status(404).json({
-                status: 'not found',
-                message: 'User was not found'
-            });
-    
+            if (e.code == 22007) {
+                res.status(400).json({status: 'not found', message: 'Invalid date format'});
+            }
+            else {
+                console.log(e); 
+                res.status(400).json({status: 'not found', message: 'User was not found'});
+            }
         });
 })
 
@@ -57,6 +58,11 @@ app.get('/api/me/calendar/:year/:month', function(req, res) { // hae oma status 
 
 app.get('/api/:user/calendar/:year/:month', function(req, res) { // hae kaverin status kuukaudelle
 
+    if ( !(req.params.year >= 2000 && req.params.year <= 3000 &&
+        req. params.month >= 1 && req.params.month <= 12)) {
+            res.status(404).json({status: 'not found', message: 'Invalid date format'});
+    }
+
     var result = fetchCalendarWithStatuses(req.params.user, req.params.year, req.params.month);
     
     var firstName = "";
@@ -67,7 +73,7 @@ app.get('/api/:user/calendar/:year/:month', function(req, res) { // hae kaverin 
         )
     .catch(function(e) {
         console.log(e); 
-        res.status(404).json({
+        res.status(400).json({
             status: 'not found',
             message: 'User was not found'
         });
@@ -110,13 +116,14 @@ app.get('/api/me/friends/:date', function(req, res) { // hae kavereiden statukse
         }
     })
     .catch(function(e) {
-        console.log(e);
-        res.status(404).json({
-            status: 'not found',
-            message: 'Friends not found'
-        });
-    })
-
+        if (e.code == 22007) {
+            res.status(400).json({status: 'not found', message: 'Invalid date format'});
+        }
+        else {
+            console.log(e); 
+            res.status(400).json({status: 'not found', message: 'Friends not found'});
+        }
+    });
 })
 
 
@@ -128,12 +135,7 @@ app.get('/api/me/exception/:date', function(req, res) { // hae poikkeukset, jotk
     db.any("SELECT exception_start_date, exception_end_date, status, id FROM exceptions WHERE user_id=$1 AND exception_end_date>=$2 ORDER BY exception_start_date", [user, req.params.date])
         .then(function(data) {
             if (data.length > 0) {
-                res.status(200)
-                    .json({
-                        status: 'success',
-                        data: data,
-                        message: 'Retrieved ' + data.length + ' exceptions'
-                    });
+                res.status(200).json(data);
             } else {
                 res.status(400).json({
                     status: 'not found',
@@ -141,12 +143,15 @@ app.get('/api/me/exception/:date', function(req, res) { // hae poikkeukset, jotk
                 });
             }
         })
-        .catch(function(err) {
-            res.status(400).json({
-                status: 'failed',
-                message: err
-            });
-        })
+        .catch(function(e) {
+            if (e.code == 22007) {
+                res.status(400).json({status: 'not found', message: 'Invalid date format'});
+            }
+            else {
+                console.log(e); 
+                res.status(400).json({status: 'not found', message: 'User not found'});
+            }
+        });
 })
 
 
@@ -214,12 +219,7 @@ app.get('/api/me/pattern/:date', function(req, res) { // hae pattern joka on voi
 
     db.one("SELECT start_at, statuses FROM patterns WHERE user_id=$1 AND start_at<=$2 ORDER BY start_at DESC LIMIT 1", [user, req.params.date])
         .then(function(data) {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    data: data,
-                    message: 'Retrieved pattern'
-            })
+            res.status(200).json(data)
         })
         .catch(function(err) {
             res.status(400).json({
@@ -262,12 +262,13 @@ app.post('/api/me/pattern', function(req, res) { // luo uusi patterni
                     status: 'failed',
                     message: 'Invalid status'
                 })
-            }
-            console.log(err);
+            } else {
+                console.log(err);
                 res.status(400).json({
                     status: "failed",
                     message: err
-                });
+                    });
+            }
         })    
 })
 
