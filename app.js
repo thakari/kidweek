@@ -65,11 +65,10 @@ app.get('/api/:user/calendar/:year/:month', function(req, res) { // hae kaverin 
 
     var result = fetchCalendarWithStatuses(req.params.user, req.params.year, req.params.month);
     
-    var firstName = "";
-    var lastName = "";
+    var name = "";
     
-   result.then(data =>
-        res.status(200).json({first_name: firstName, last_name: lastName, statuses: data})
+    result.then(data =>
+        res.status(200).json({name: name, statuses: data})
         )
     .catch(function(e) {
         console.log(e); 
@@ -87,15 +86,15 @@ app.get('/api/me/friends/:date', function(req, res) { // hae kavereiden statukse
     var user = req.query.fb_token; // ja tän tilalle jotain muuta myöhemmin
 
     var friends = [];
-    friends.push ({user_id: "abc123", first_name: "", last_name: ""});
-    friends.push ({user_id: "xyz", first_name: "", last_name: ""}); // ei kannassa
-    friends.push ({user_id: "qwe321", first_name: "", last_name: ""});
+    friends.push ({user_id: "abc123", name: ""});
+    friends.push ({user_id: "xyz", name: ""}); // ei kannassa
+    friends.push ({user_id: "qwe321", name: ""});
 
     var date = new Date(req.params.date);
     
     var statusPromises = [];
     friends.forEach(function(friend) {
-        statusPromises.push(fetchStatusAndName(friend.user_id, date, friend.first_name, friend.last_name));
+        statusPromises.push(fetchStatusAndName(friend.user_id, date, friend.name));
     });
                             
     var result = Promise.all(statusPromises);
@@ -291,14 +290,13 @@ app.post('/api/me', function(req, res) { // luo uusi käyttäjä
 })
 
 
-var fetchStatusAndName = function(userId, date, firstName, lastName) {
+var fetchStatusAndName = function(userId, date, name) {
     return db.one("SELECT status($1, $2)", [userId, date])
         .then(function(data) {
             if (data.status != null) {
                 return {
                     user_id: userId,
-                    first_name: firstName,
-                    last_name: lastName,
+                    name: name,
                     status: data.status,
                 };
              } 
@@ -310,9 +308,6 @@ var fetchStatus = function(userId, date) {
         .then(function(data) {
             if (data.status != null) {
                 var result = {
-//                  user_id: userId,
-//                  first_name: "firstName",
-//                  last_name: "lastName",
                     status: data.status,
                     date: date.toISOString().substring(0, 10)
                 };
