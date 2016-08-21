@@ -341,11 +341,11 @@ var fetchCalendarWithStatuses = function(user, year, month) {
 var validateUser = function(fb_token) {
     var options = {
         host: 'graph.facebook.com',
-        port: 80,
+        port: 443,
         path: '/v2.7/me?access_token='+fb_token,
         method: 'GET'
         };
-
+    
     https.request(options, function(res) {
         console.log('STATUS: ' + res.statusCode);
         console.log('HEADERS: ' + JSON.stringify(res.headers));
