@@ -12,6 +12,8 @@ var bodyParser = require("body-parser");
 var facebook_app_id = "498488837013856";
 var apiVersion = "0.2";
 
+var https = require('https');
+
 app.use(logger('dev'));
 app.use(bodyParser.json());
 app.set('port', (process.env.PORT || 5000));
@@ -23,6 +25,11 @@ app.get('/', function(req, res) {
 
 app.get('/api/version', function(req, res) { // hae api-versio
     res.status(200).json({version: apiVersion});
+})
+
+
+app.get('/api/test', function(req, res) {
+    validateUser(req.query.fb_token);
 })
 
 
@@ -329,6 +336,44 @@ var fetchCalendarWithStatuses = function(user, year, month) {
     }
     
     return Promise.all(statusPromises);
+}
+
+var validateUser = function(fb_token) {
+    var options = {
+        host: 'graph.facebook.com',
+        port: 80,
+        path: '/v2.7/me?access_token='+fb_token,
+        method: 'GET'
+        };
+
+    https.request(options, function(res) {
+        console.log('STATUS: ' + res.statusCode);
+        console.log('HEADERS: ' + JSON.stringify(res.headers));
+        res.setEncoding('utf8');
+        res.on('data', function (chunk) {
+            console.log('BODY: ' + chunk);
+        });
+    }).end();
+
+}
+
+var validateUserFriends = function(fb_token, friend) {
+    var options = {
+        host: 'graph.facebook.com',
+        port: 80,
+        path: '/v2.7/me/friends?access_token='+fb_token,
+        method: 'GET'
+        };
+
+    https.request(options, function(res) {
+        console.log('STATUS: ' + res.statusCode);
+        console.log('HEADERS: ' + JSON.stringify(res.headers));
+        res.setEncoding('utf8');
+        res.on('data', function (chunk) {
+            console.log('BODY: ' + chunk);
+        });
+    }).end();
+
 }
 
 app.listen(app.get('port'), function () {
