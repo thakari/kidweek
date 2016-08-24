@@ -6,7 +6,8 @@
   "dependencies": {
     "body-parser": "^1.15.2",
     "express": "^4.13.4",
-    "morgan": "^1.7.0"
+    "morgan": "^1.7.0",
+    "request": "2.74.0"
   },
   "devDependencies": {},
   "scripts": {
