@@ -30,8 +30,9 @@ app.get('/api/version', function(req, res) { // hae api-versio
 
 
 app.get('/api/test', function(req, res) { // test fb_token validation
-    user = validateUser(req.query.fb_token);
-    res.status(200).json(user);
+    validateUser(req.query.fb_token, function(user) {
+        res.status(200).json(user);
+    });
 })
 
 
@@ -347,15 +348,13 @@ var fetchCalendarWithStatuses = function(user, year, month) {
 }
 
 
-var validateUser = function(fb_token) {
+var validateUser = function(fb_token, callback) {
     var user = {name: "", id: ""};
     request('https://graph.facebook.com/v2.7/me?access_token='+fb_token, function (error, response, body) {
         if (!error && response.statusCode == 200) {
-            user = JSON.parse(body);
+            callback(JSON.parse(body));
         }
     });
-    console.log(user);
-    return user
 }
 
 
