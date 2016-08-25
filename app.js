@@ -36,13 +36,18 @@ app.get('/api/test', function(req, res) { // test fb_token validation
         })
         .catch(function(errorStatusCode) {
             res.status(errorStatusCode).end();
-    });
+        });
 })
 
 
 app.get('/api/test/:friend', function(req, res) { // test if user is in friend list
-    isFriend = validateUserFriends(req.query.fb_token, req.params.friend);
-    res.status(200).json({isFriend: isFriend});
+    validateUserFriends(req.query.fb_token, req.params.friend)
+        .then(function(result){
+            res.status(200).json({isFriend: result});
+        })
+        .catch(function(errorStatusCode) {
+            res.status(errorStatusCode).end();
+        });
 })
 
 
@@ -366,13 +371,14 @@ var validateUser = function(fb_token) {
 
 
 var validateUserFriends = function(fb_token, friend) {
-    var isFriend = false;
-    request('https://graph.facebook.com/v2.7/me/friends/'+friend+'?access_token='+fb_token, function (error, response, body) {
-        if (!error && response.statusCode == 200 && JSON.parse(body).data.length == 1) {
-            isFriend = true;
-        }
-        console.log(isFriend);
-        return friend
+    return new Promise(function(resolve, reject) {
+        request('https://graph.facebook.com/v2.7/me/friends/'+friend+'?access_token='+fb_token, function (error, response, body) {
+            if (!error && response.statusCode == 200) {
+                resolve(JSON.parse(body).data.length == 1);
+            } else {
+                reject(response.statusCode);
+            }
+        });
     });
 }
 
