@@ -10,7 +10,7 @@ var db = pgp(dbUrl);
 var logger = require("morgan");
 var bodyParser = require("body-parser");
 var facebook_app_id = "498488837013856";
-var apiVersion = "0.2";
+var apiVersion = "0.3";
 
 var https = require('https');
 var request = require('request');
@@ -29,32 +29,42 @@ app.get('/api/version', function(req, res) { // hae api-versio
 })
 
 
-app.get('/api/test', function(req, res) { // test fb_token validation
+app.get('/api/fb-test', function(req, res) { // test fb_token validation
     validateUser(req.query.fb_token)
         .then(function(user) {
             res.status(200).json(user)
         })
         .catch(function(errorStatusCode) {
-            res.status(errorStatusCode).end();
+            res.status(errorStatusCode).json({status: 'error', message: 'Authentication failed'});
         });
 })
 
 
-app.get('/api/test/:friend', function(req, res) { // test if user is in friend list
-    validateUserFriends(req.query.fb_token, req.params.friend)
-        .then(function(result){
-            res.status(200).json({isFriend: result});
+app.get('/api/fb-test/isfriend/:friend', function(req, res) { // test if user is in friend list
+    validateUserFriend(req.query.fb_token, req.params.friend)
+        .then(function(result) {
+            res.status(200).json(result);
         })
         .catch(function(errorStatusCode) {
-            res.status(errorStatusCode).end();
+            res.status(errorStatusCode).json({status: 'error', message: 'Authentication failed'});
         });
 })
 
 
-app.get('/api/me/status/:date', function(req, res) { // hae status
+app.get('/api/fb-test/friends', function(req, res) { // test fetching friend list
+    fetchUserFriends(req.query.fb_token)
+        .then(function(friends) {
+            res.status(200).json(friends);
+        })
+        .catch(function(errorStatusCode) {
+            res.status(errorStatusCode).json({status: 'error', message: 'Authentication failed'});
+        });
+})
 
-    // validoi fb_token
-    var user = req.query.fb_token; // ja tän tilalle jotain muuta myöhemmin
+
+app.get('/api/test/me/status/:date', function(req, res) { // hae status
+
+    var user = req.query.fb_token;
 
     fetchStatus(user, new Date(req.params.date))
         .then(function(data) {
@@ -72,6 +82,31 @@ app.get('/api/me/status/:date', function(req, res) { // hae status
 })
 
 
+app.get('/api/me/status/:date', function(req, res) { // hae status
+
+    validateUser(req.query.fb_token)
+        .then(function(user) {
+            fetchStatus(user.id, new Date(req.params.date))
+                .then(function(data) {
+                    res.status(200).json(data);
+                })
+                .catch(function(e) {
+                    if (e.code == 22007) {
+                        res.status(400).json({status: 'not found', message: 'Invalid date format'});
+                    }
+                    else {
+                        console.log(e); 
+                        res.status(400).json({status: 'not found', message: 'User was not found'});
+                    }
+                });
+        })
+        .catch(function(errorStatusCode) {
+            res.status(errorStatusCode).json({status: 'error', message: 'Authentication failed'});
+        });
+
+})
+
+
 app.get('/api/me/calendar/:year/:month', function(req, res) { // hae oma status kuukaudelle
     var year = req.params.year;
     var month = req.params.month;
@@ -81,7 +116,7 @@ app.get('/api/me/calendar/:year/:month', function(req, res) { // hae oma status 
 })
 
 
-app.get('/api/:user/calendar/:year/:month', function(req, res) { // hae kaverin status kuukaudelle
+app.get('/api/test/:user/calendar/:year/:month', function(req, res) { // hae kaverin status kuukaudelle
 
     if ( !(req.params.year >= 2000 && req.params.year <= 3000 &&
         req. params.month >= 1 && req.params.month <= 12)) {
@@ -105,7 +140,40 @@ app.get('/api/:user/calendar/:year/:month', function(req, res) { // hae kaverin 
 })
 
 
-app.get('/api/me/friends/:date', function(req, res) { // hae kavereiden statukset annetulle päivälle
+app.get('/api/:friend/calendar/:year/:month', function(req, res) { // hae kaverin status kuukaudelle
+
+    if ( !(req.params.year >= 2000 && req.params.year <= 3000 &&
+        req. params.month >= 1 && req.params.month <= 12)) {
+            res.status(404).json({status: 'error', message: 'Invalid date format'});
+    }
+    else {
+        validateUserFriend(req.query.fb_token, req.params.friend)
+            .then(function(friends) {
+                if(friends.length == 1) { // requested user is a friend
+                    var result = fetchCalendarWithStatuses(req.params.friend, req.params.year, req.params.month);
+                    result.then(function(data) {
+                        res.status(200).json({user: friends[0], statuses: data})
+                    })
+                    .catch(function(e) {
+                        console.log(e); 
+                        res.status(400).json({
+                            status: 'not found',
+                            message: 'User was not found'
+                        });
+                    })                    
+                }
+                else { // requested user is not a friend
+                    res.status(400).json({status: 'error', message: 'Not authorized'});
+                }            
+            })
+            .catch(function(errorStatusCode) {
+                res.status(errorStatusCode).json({status: 'error', message: 'Authentication failed'});
+            });
+    }
+})
+
+
+app.get('/api/test/me/friends/:date', function(req, res) { // hae kavereiden statukset annetulle päivälle
 
     // validoi fb_token ja palauta kaverit
     var user = req.query.fb_token; // ja tän tilalle jotain muuta myöhemmin
@@ -148,6 +216,49 @@ app.get('/api/me/friends/:date', function(req, res) { // hae kavereiden statukse
             res.status(400).json({status: 'not found', message: 'Friends not found'});
         }
     });
+})
+
+
+app.get('/api/me/friends/:date', function(req, res) { // hae kavereiden statukset annetulle päivälle
+
+    fetchUserFriends(req.query.fb_token)
+        .then(function(friends) {
+            var date = new Date(req.params.date);    
+            var statusPromises = [];
+            friends.forEach(function(friend) {
+                statusPromises.push(fetchStatusAndName(friend.id, date, friend.name));
+            });
+
+            var result = Promise.all(statusPromises);
+            result.then(function(data) {
+                for(i=0; i<data.length; i++) {
+                    if (data[i] == undefined) {
+                        data.splice(i--, 1);
+                    }
+                }
+                if(data.length == 0) {
+                    res.status(404).json({
+                        status: 'not found',
+                        message: 'Friends not found'
+                    })
+                }
+                else {
+                    res.status(200).json({date: date.toISOString().substring(0, 10), friends: data})
+                }
+            })
+            .catch(function(e) {
+                if (e.code == 22007) {
+                    res.status(400).json({status: 'not found', message: 'Invalid date format'});
+                }
+                else {
+                    console.log(e); 
+                    res.status(400).json({status: 'not found', message: 'Friends not found'});
+                }
+            });
+        })
+        .catch(function(errorStatusCode) {
+            res.status(errorStatusCode).json({status: 'error', message: 'Authentication failed'});
+        });
 })
 
 
@@ -264,12 +375,23 @@ app.post('/api/me/pattern', function(req, res) { // luo uusi patterni
     var user = req.query.fb_token; // ja tän tilalle jotain muuta myöhemmin
 
     if ((patternLength % 7) != 0 && patternLength != 1) {
-        res.status(400).json({
-            status: 'failed',
-            message: 'Invalid array length'
-        });
+        res.status(400).json({status: 'failed', message: 'Invalid array length'});
     }
-
+    
+    if (patternLength == 1 && statuses[0] != 'away' && statuses[0] != 'present') {
+        res.status(400).json({status: 'failed', message: 'Invalid single status'});
+    }
+    
+    for (i=1; i<patternLength; i++) {
+        if((statuses[i] == 'away' && statuses[i-1] != 'leaves' && statuses[i-1] != 'away') ||
+           (statuses[i] == 'present' && statuses[i-1] != 'arrives' && statuses[i-1] != 'present') ||
+           (statuses[i] == 'leaves' && statuses[i-1] != 'present') ||
+           (statuses[i] == 'arrives' && statuses[i-1] != 'away')) {
+            res.status(400).json({status: 'failed', message: 'Invalid transition in array'});
+            break;
+        }
+    }
+    
     var patternString = '{"' + statuses[0] + '"';
     for (i = 1; i < patternLength; i++) {
         patternString = patternString + ', "' + statuses[i] + '"';
@@ -370,11 +492,24 @@ var validateUser = function(fb_token) {
 }
 
 
-var validateUserFriends = function(fb_token, friend) {
+var validateUserFriend = function(fb_token, friend) {
     return new Promise(function(resolve, reject) {
         request('https://graph.facebook.com/v2.7/me/friends/'+friend+'?access_token='+fb_token, function (error, response, body) {
             if (!error && response.statusCode == 200) {
-                resolve(JSON.parse(body).data.length == 1);
+                resolve(JSON.parse(body).data);
+            } else {
+                reject(response.statusCode);
+            }
+        });
+    });
+}
+
+
+var fetchUserFriends = function(fb_token) {
+    return new Promise(function(resolve, reject) {
+        request('https://graph.facebook.com/v2.7/me/friends?access_token='+fb_token, function (error, response, body) {
+            if (!error && response.statusCode == 200) {
+                resolve(JSON.parse(body).data);
             } else {
                 reject(response.statusCode);
             }
