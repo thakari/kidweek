@@ -18,7 +18,7 @@ CREATE TABLE patterns (
     user_id VARCHAR(512) REFERENCES users ON DELETE CASCADE,
     start_at DATE NOT NULL,
     statuses kid_status[] NOT NULL,
-    created_on TIMESTAMP NOT NULL,
+    created_on TIMESTAMP NOT NULL
 /*    UNIQUE(user_id) */
 );
 
