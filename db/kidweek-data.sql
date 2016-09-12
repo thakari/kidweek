@@ -1,12 +1,12 @@
 BEGIN;
-INSERT INTO users (id) VALUES ('abc123');
-INSERT INTO patterns (user_id, start_at, statuses, created_on) VALUES ('abc123', '2016-01-15', '{"arrives", "present", "present", "leaves"}', now());
-INSERT INTO exceptions (user_id, exception_start_date, exception_end_date, status) VALUES ('abc123', '2015-10-15', '2015-10-22', 'away');
+INSERT INTO users (id) VALUES ('10153591856399748'); /* emononen */
+INSERT INTO patterns (user_id, start_at, statuses, created_on) VALUES ('10153591856399748', '2016-01-15', '{"arrives", "present", "present", "leaves"}', now());
+INSERT INTO exceptions (user_id, exception_start_date, exception_end_date, status) VALUES ('10153591856399748', '2015-10-15', '2015-10-22', 'away');
 
-INSERT INTO users (id) VALUES ('qwe321');
-INSERT INTO patterns (user_id, start_at, statuses, created_on) VALUES ('qwe321', '2015-10-11', '{"arrives", "present", "leaves", "away", "away", "arrives", "leaves"}', now());
+INSERT INTO users (id) VALUES ('10153730291147339'); /* thakari */
+INSERT INTO patterns (user_id, start_at, statuses, created_on) VALUES ('10153730291147339', '2015-10-11', '{"arrives", "present", "leaves", "away", "away", "arrives", "leaves"}', now());
 
-INSERT INTO exceptions (user_id, exception_start_date, exception_end_date, status) VALUES ('qwe321', '2015-12-25', '2016-01-05','present');
+INSERT INTO exceptions (user_id, exception_start_date, exception_end_date, status) VALUES ('10153730291147339', '2015-12-25', '2016-01-05','present');
 
 INSERT INTO users (id) VALUES ('weekend_dad');
 INSERT INTO patterns (user_id, start_at, statuses, created_on) VALUES ('weekend_dad', '2015-01-05', '{"away", "away", "away", "away", "away", "away", "away", "away", "away", "away", "away", "arrives", "present", "leaves"}', now());
