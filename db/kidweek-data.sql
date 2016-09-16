@@ -15,4 +15,5 @@ INSERT INTO users (id) VALUES ('week_mom');
 INSERT INTO patterns (user_id, start_at, statuses, created_on) VALUES ('week_mom', '2015-01-05', '{"present", "present", "present", "present", "leaves", "away", "arrives"}', now());
 INSERT INTO exceptions (user_id, exception_start_date, exception_end_date, status) VALUES ('week_mom', '2016-06-01', '2016-06-07', 'present');
 INSERT INTO exceptions (user_id, exception_start_date, exception_end_date, status) VALUES ('week_mom', '2016-10-01', '2016-11-01', 'present');
+INSERT INTO exceptions (user_id, exception_start_date, exception_end_date, status) VALUES ('10153591856399748', '2016-10-01', '2016-11-01', 'present');
 COMMIT;
