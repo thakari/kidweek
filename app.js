@@ -2,11 +2,6 @@
 var express = require('express');
 var app = express();
 
-var pgp = require("pg-promise")(/*options*/);
-var dbUrl = process.env.DATABASE_URL || "postgres://kidweek:123@localhost:5432/kw";
-console.log("Using DB URL" + dbUrl);
-var db = pgp(dbUrl);
-var db2 = require('./db');
 var logger = require("morgan");
 var bodyParser = require("body-parser");
 var facebook_app_id = "498488837013856";
