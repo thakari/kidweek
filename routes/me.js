@@ -39,7 +39,7 @@ exports.calendar = function(req, res) { // hae oma status kuukaudelle
             data => res.status(200).json({statuses: data}))
         .catch(function(e) {
                 console.log(e);
-                res.status(400).end();
+                res.status(404).end();
         })
 }
 
@@ -152,7 +152,9 @@ exports.createPattern = function(req, res) { // luo uusi patterni
 
     getCurrentUser(req.query.fb_token)
         .then(function(me) {
-            return db.client.none("INSERT INTO patterns (user_id, start_at, statuses, created_on) VALUES ($1, $2, $3, NOW())", [user, startDate, patternString])
+            return db.client.none(
+              "INSERT INTO patterns (user_id, start_at, statuses, created_on) VALUES ($1, $2, $3, NOW())",
+              [me.id, startDate, patternString])
         })
         .then(function() {
             res.status(201).end();
