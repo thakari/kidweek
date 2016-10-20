@@ -175,6 +175,7 @@ var getCurrentUser = function(fb_token) {
         var url = 'https://graph.facebook.com/v2.8/me?access_token=' + fb_token;
         console.log("GET... " + url);
         request(url, function (error, response, body) {
+            console.log("graph api response " + response + ", body " + body + ", error " + error);
             if (!error && response.statusCode == 200) {
                 resolve(JSON.parse(body));
             } else {
