@@ -16,7 +16,7 @@ exports.calendar = function(req, res) { // hae kaverin status kuukaudelle
             res.status(200).json({user: req.params.friend, statuses: data})
         })
         .catch(function(e) {
-            console.log(e); 
+            console.log(e);
             res.status(401).end();
         });
 }
@@ -25,7 +25,7 @@ exports.friendsStatusesForDate = function(req, res) { // hae kavereiden statukse
 
     fetchUserFriends(req.query.fb_token)
         .then(function(friends) {
-            var date = new Date(req.params.date);    
+            var date = new Date(req.params.date);
             var statusPromises = [];
             friends.forEach(function(friend) {
                 statusPromises.push(db.fetchStatusAndName(friend.id, date, friend.name));
@@ -53,7 +53,7 @@ exports.friendsStatusesForDate = function(req, res) { // hae kavereiden statukse
                     res.status(400).json({status: 'not found', message: 'Invalid date format'});
                 }
                 else {
-                    console.log(e); 
+                    console.log(e);
                     res.status(404).json({status: 'not found', message: 'Friends not found'});
                 }
             });
@@ -85,7 +85,8 @@ var validateUserFriend = function(fb_token, friend) {
 
 var fetchUserFriends = function(fb_token) {
     return new Promise(function(resolve, reject) {
-        request('https://graph.facebook.com/v2.7/me/friends?access_token='+fb_token, function (error, response, body) {
+        request('https://graph.facebook.com/v2.8/me/friends?access_token='+fb_token, function (error, response, body) {
+          console.log("graph api response " + response + ", body " + body + ", error " + error);
             if (!error && response.statusCode == 200) {
                 resolve(JSON.parse(body).data);
             } else {
@@ -94,6 +95,3 @@ var fetchUserFriends = function(fb_token) {
         });
     });
 }
-
-
-
