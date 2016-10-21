@@ -16,11 +16,8 @@ var db = loadDb();
 exports.client = db;
 
 exports.fetchStatusAndName = function(userId, date, name) {
-    var d = date.toISOString().substring(0, 10);
-    return db.one("SELECT status($1, $2)", [userId, d])
+    return db.one("SELECT status($1, $2)", [userId, date])
         .then(function(data) {
-            console.log("status and name for " + userId + ": " + name);
-            console.log("status and name for " + userId + d + ": " + data.status);
             if (data.status != null) {
                 return {
                     user_id: userId,
