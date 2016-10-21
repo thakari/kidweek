@@ -16,15 +16,18 @@ var db = loadDb();
 exports.client = db;
 
 exports.fetchStatusAndName = function(userId, date, name) {
-    return db.one("SELECT status($1, $2)", [userId, date])
+    var d = date.toISOString().substring(0, 10);
+    return db.one("SELECT status($1, $2)", [userId, d])
         .then(function(data) {
+            console.log("status and name for " + userId + ": " + name);
+            console.log("status and name for " + userId + d + ": " + data.status);
             if (data.status != null) {
                 return {
                     user_id: userId,
                     name: name,
                     status: data.status,
                 };
-             } 
+             }
         })
 }
 
@@ -40,7 +43,7 @@ exports.fetchStatus = function(userId, date) {
                 return result;
              } else {
                  throw "User " + userId + " status not found for " + date;
-             } 
+             }
         })
 }
 
@@ -52,6 +55,6 @@ exports.fetchCalendarWithStatuses = function(user, year, month) {
         var date = new Date(Date.UTC(year, month - 1, i));
         statusPromises.push(exports.fetchStatus(user, date));
     }
-    
+
     return Promise.all(statusPromises);
 }
