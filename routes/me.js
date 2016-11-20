@@ -16,7 +16,7 @@ exports.statusForDate = function(req, res) { // hae status
 }
 
 exports.createUser = function(req, res) { // luo uusi käyttäjä
-    
+
     getCurrentUser(req.query.fb_token)
         .then(function(user) {
             return db.client.none("INSERT INTO users (id) VALUES ($1)", user.id)
@@ -38,7 +38,7 @@ exports.calendar = function(req, res) { // hae oma status kuukaudelle
         .then(
             data => res.status(200).json({statuses: data}))
         .catch(function(e) {
-                console.log(e); 
+                console.log(e);
                 res.status(400).end();
         })
 }
@@ -72,10 +72,10 @@ exports.deleteException = function(req, res) { // poista poikkeus
             console.log(err);
             res.status(404).end();
         })
-}    
+}
 
 exports.createException = function(req, res) { // luo uusi poikkeus
-    
+
     var startDate = req.body.startDate;
     var endDate = req.body.endDate;
     var status = req.body.status;
@@ -117,23 +117,23 @@ exports.pattern = function(req, res) { // hae pattern joka on voimassa annettuna
             res.status(404).end();
         })
 }
-    
+
 
 
 exports.createPattern = function(req, res) { // luo uusi patterni
-    
+
     var startDate = req.body.startDate;
     var statuses = req.body.statuses;
     var patternLength = statuses.length;
-    
+
     if ((patternLength % 7) != 0 && patternLength != 1) {
         res.status(400).json({status: 'failed', message: 'Invalid array length'});
     }
-    
+
     if (patternLength == 1 && statuses[0] != 'away' && statuses[0] != 'present') {
         res.status(400).json({status: 'failed', message: 'Invalid single status'});
     }
-    
+
     for (i=1; i<patternLength; i++) {
         if((statuses[i] == 'away' && statuses[i-1] != 'leaves' && statuses[i-1] != 'away') ||
            (statuses[i] == 'present' && statuses[i-1] != 'arrives' && statuses[i-1] != 'present') ||
@@ -143,7 +143,7 @@ exports.createPattern = function(req, res) { // luo uusi patterni
             return;
         }
     }
-    
+
     var patternString = '{"' + statuses[0] + '"';
     for (i = 1; i < patternLength; i++) {
         patternString = patternString + ', "' + statuses[i] + '"';
@@ -167,7 +167,7 @@ exports.createPattern = function(req, res) { // luo uusi patterni
             } else {
                 res.status(404).end();
             }
-        })    
+        })
 }
 
 var getCurrentUser = function(fb_token) {
@@ -185,3 +185,4 @@ var getCurrentUser = function(fb_token) {
     });
 }
 
+exports.getCurrentUser = getCurrentUser;
