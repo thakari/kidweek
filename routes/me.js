@@ -187,3 +187,5 @@ var getCurrentUser = function(fb_token) {
         });
     });
 }
+
+exports.getCurrentUser = getCurrentUser;

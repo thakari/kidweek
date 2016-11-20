@@ -1,24 +1,34 @@
 var request = require('request');
 var db = require('./../db');
+var me = require('./me')
 
 exports.calendar = function(req, res) { // hae kaverin status kuukaudelle
 
     if ( !(req.params.year >= 2000 && req.params.year <= 3000 &&
-        req. params.month >= 1 && req.params.month <= 12)) {
+        req.params.month >= 1 && req.params.month <= 12)) {
             res.status(404).json({status: 'error', message: 'Invalid date format'});
             return;
     }
-    validateUserFriend(req.query.fb_token, req.params.friend)
-        .then(function(friends) {
+
+    me.getCurrentUser(req.query.fb_token)
+      .then(function(user) {
+          if (user.id == req.params.friend) { // oman kalenterin haku
             return db.fetchCalendarWithStatuses(req.params.friend, req.params.year, req.params.month);
-        })
-        .then(function(data) {
-            res.status(200).json({user: req.params.friend, statuses: data})
-        })
-        .catch(function(e) {
-            console.log(e);
-            res.status(401).end();
-        });
+          } else { // kaverin kalenteri
+            return validateUserFriend(req.query.fb_token, req.params.friend)
+                .then(function(friends) {
+                    return db.fetchCalendarWithStatuses(req.params.friend, req.params.year, req.params.month);
+                })
+          }
+      })
+      .then(function(data) {
+          res.status(200).json({user: req.params.friend, statuses: data})
+      })
+      .catch(function(e) {
+          console.log(e);
+          res.status(401).end();
+      });
+
 }
 
 exports.friendsStatusesForDate = function(req, res) { // hae kavereiden statukset annetulle päivälle
@@ -28,11 +38,13 @@ exports.friendsStatusesForDate = function(req, res) { // hae kavereiden statukse
             var date = new Date(req.params.date);
             var statusPromises = [];
             friends.forEach(function(friend) {
+                console.log("data for friend... " + friend.id);
                 statusPromises.push(db.fetchStatusAndName(friend.id, date, friend.name));
             });
 
             var result = Promise.all(statusPromises);
             result.then(function(data) {
+                console.log("data for all " + data);
                 for(i=0; i<data.length; i++) {
                     if (data[i] == undefined) {
                         data.splice(i--, 1);
