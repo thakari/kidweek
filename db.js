@@ -24,7 +24,7 @@ exports.fetchStatusAndName = function(userId, date, name) {
                     name: name,
                     status: data.status,
                 };
-             }
+             } 
         })
 }
 
@@ -40,7 +40,7 @@ exports.fetchStatus = function(userId, date) {
                 return result;
              } else {
                  throw "User " + userId + " status not found for " + date;
-             }
+             } 
         })
 }
 
@@ -52,6 +52,6 @@ exports.fetchCalendarWithStatuses = function(user, year, month) {
         var date = new Date(Date.UTC(year, month - 1, i));
         statusPromises.push(exports.fetchStatus(user, date));
     }
-
+    
     return Promise.all(statusPromises);
 }
