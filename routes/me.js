@@ -51,7 +51,7 @@ exports.exception = function(req, res) { // hae poikkeukset, jotka eivät ole vi
             return db.client.many("SELECT exception_start_date, exception_end_date, status, id FROM exceptions WHERE user_id=$1 AND exception_end_date>=$2 ORDER BY exception_start_date", [me.id, req.params.date])
         })
         .then(function(data) {
-            res.status(200).json(data);
+            res.status(200).json({date: req.params.date, exceptions: data});
         })
         .catch(function(err) {
             console.log(err);
